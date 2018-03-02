@@ -1,0 +1,137 @@
+import turtle, random, math, operator
+
+colors  = ["red","green","blue","orange","purple","pink","yellow"]
+screenSize = turtle.screensize()
+screen = turtle.Screen()
+
+robotSize = 25
+numRobots = 10
+tsize = 21
+autoHeading = False
+turtleSpeed = 8
+
+lines = []
+
+class Robot(turtle.Turtle):
+    shapes = []
+    def __init__(self,x,y,col):
+        global robotSize, tsize
+        """Turtle Constructor"""
+        turtle.Turtle.__init__(self, visible = False)
+        self.shape(self.createTurtleShape(col))
+        self.speed(turtleSpeed)
+        self.color(col)
+        self.turtlesize(robotSize/tsize)
+        self.pensize(robotSize)
+        self.penup()
+        self.goto(x,y)
+        self.pendown()
+        self.pencolor("grey")
+        self.right(random.randint(0,360))
+        self.showturtle()
+    def createTurtleShape(self, color):
+        global screen
+        if not str(color) in self.shapes:
+            cir = ((10, 0), (9.51, 3.09), (8.09, 5.88), (5.88, 8.09), (3.09, 9.51), (0, 10), (-3.09, 9.51), (-5.88, 8.09), (-8.09, 5.88), (-9.51, 3.09), (-10, 0), (-9.51, -3.09), (-8.09, -5.88), (-5.88, -8.09), (-3.09, -9.51), (-0.0, -10.0), (3.09, -9.51), (5.88, -8.09), (8.09, -5.88), (9.51, -3.09))
+            line = ((0,0),(0,10))
+            s = turtle.Shape("compound")
+            s.addcomponent(cir, color, "black")
+            s.addcomponent(line, "black", "black")
+            screen.register_shape(str(color), s)
+            self.shapes.append(str(color))
+        return str(color)
+    def move(self, target):
+        global lines
+        lines.append((self.pos(),target))
+        degrees = math.degrees(math.atan2(target[1]-self.pos()[1], target[0]-self.pos()[0]))
+        heading = self.heading()
+        if autoHeading:
+            self.setheading(degrees)
+        else:
+            if degrees < 0:
+                #print(degrees)
+                degrees = 360 + degrees
+            if((heading-degrees+360)%360) > 180:
+                if heading > 180 and degrees < 180:
+                    self.left(360-(heading-degrees))
+                else:
+                    self.left(degrees-heading)
+            else:
+                if heading < 180 and (degrees) > 180:
+                    self.right(360-(degrees-heading))
+                else:
+                    self.right(heading-degrees)
+                
+        #print("Heading:",heading,", Target:",degrees)
+        self.forward(self.distance(target))
+
+robots = [Robot(
+    random.randint(-(screenSize[0]/2),(screenSize[0]/2)),
+    random.randint(-(screenSize[1]/2),(screenSize[1]/2)),
+    random.choice(colors)) for r in range(numRobots)]
+
+target = turtle.Turtle(shape="circle", visible = False)
+target.penup()
+target.goto(random.randint(-(screenSize[0]/2),(screenSize[0]/2)),
+            random.randint(-(screenSize[1]/2),(screenSize[1]/2)))
+target.color("red")
+target.showturtle()
+
+for w in range(3):
+    for s in range(len(robots)):
+        robots[s].move(target.pos())
+        target.hideturtle()
+        target.goto(random.randint(-(screenSize[0]/2),(screenSize[0]/2)),
+                    random.randint(-(screenSize[1]/2),(screenSize[1]/2)))
+        target.showturtle()
+
+
+def doLinesIntersect(line1, line2):
+    if doBoundingBoxesIntersect(line1[0],line1[1],line2[0],line2[1]) and checkLinesTouchOrCross(line1,line2) and checkLinesTouchOrCross(line2,line1):
+        return True
+    else:
+        return False
+
+def checkLinesTouchOrCross(line1, line2):
+    if (checkPointOnLeft(line1[0], line1[1], line2[0]) is None):
+        if pointOnLine(line1[0], line1[1], line2[0]):
+            return True
+    elif (checkPointOnLeft(line1[0], line1[1], line2[1]) is None):
+        if pointOnLine(line1[0], line1[1], line2[1]):
+            return True
+    elif checkPointOnLeft(line1[0], line1[1], line2[0]) ^ checkPointOnLeft(line1[0], line1[1], line2[1]):
+        return True
+    else:
+        return False     
+    
+
+#line ab, line cd
+def doBoundingBoxesIntersect(a,b,c,d):
+    if a[0] <= d[0] and b[0] >= c[0] and a[1] <= d[1] and b[1] >= c[1]:
+        return True
+
+#return none for collinear, true for left, false for right
+def checkPointOnLeft(a, b, c):
+    triangle = (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])
+
+    if triangle == 0:
+        return None
+    elif triangle > 0:
+        return True
+    elif triangle < 0:
+        return False
+    
+#line ab, point c
+def pointOnLine(a,b,c):
+    if (a[0] <= c[0] <= b[0]) or (b[0] <= c[0] <= a[0]) or (a[1] <= c[1] <= b[1]) or (b[1] <= c[1] <= a[1]):
+        return True
+    else:
+        return False
+
+
+linea = ((0,0),(0,5))
+lineb = ((0,5),(2,6))
+
+print(doLinesIntersect(linea, lineb))
+
+turtle.done()
