@@ -1,38 +1,79 @@
-import turtle, random, math, operator
+import turtle, random, math
 
 colors  = ["red","green","blue","orange","purple","pink","yellow"]
 screenSize = turtle.screensize()
 screen = turtle.Screen()
 
+numSensors = 12
 robotSize = 25
-numRobots = 10
 tsize = 21
-autoHeading = False
+linesize = 2
 turtleSpeed = 8
+autoHeading = False
+visualiseMode = True
+
+xMax = (screenSize[0]/2)
+xMin = -(screenSize[0]/2)
+yMax = (screenSize[1]/2)
+yMin = -(screenSize[1]/2)
+
+weightMin = 0
+weightMax = 2
+
+numRobots = 10
+steps = 1
+keepRobots = 5
+#of which there are:
+keepExtra = 2
+mutationChance = 1
 
 lines = []
 
 class Robot(turtle.Turtle):
     shapes = []
+    weights1 = {}
+    weights2 = {}
+    score = None
+
+    def __repr__(self):
+        return '{}: {}'.format(self.__class__.__name__, self.score)
+        
+    def __lt__(self, other):
+         return self.score < other.score
+        
     def __init__(self,x,y,col):
-        global robotSize, tsize
-        """Turtle Constructor"""
+        global robotSize, tsize, linesize
+        for w in range(numSensors):
+                self.weights1[w] = random.uniform(weightMin, weightMax)
+                self.weights2[w] = random.uniform(weightMin, weightMax)
         turtle.Turtle.__init__(self, visible = False)
-        self.shape(self.createTurtleShape(col))
-        self.speed(turtleSpeed)
-        self.color(col)
-        self.turtlesize(robotSize/tsize)
-        self.pensize(robotSize)
-        self.penup()
-        self.goto(x,y)
-        self.pendown()
-        self.pencolor("grey")
-        self.right(random.randint(0,360))
-        self.showturtle()
+        if visualiseMode:
+            self.shapesize(outline=linesize)
+            self.shape(self.createTurtleShape(col))
+            self.speed(turtleSpeed)
+            self.color(col)
+            self.turtlesize(robotSize/tsize)
+            self.pensize(robotSize)
+            self.penup()
+            self.goto(x,y)
+            self.pendown()
+            self.pencolor("grey")
+            self.setheading(random.randint(0,360))
+            self.showturtle()
+        else:
+            self.penup()
+            self.speed(0)
+            self.goto(x,y)
+            self.setheading(random.randint(0,360))
+        
     def createTurtleShape(self, color):
         global screen
         if not str(color) in self.shapes:
-            cir = ((10, 0), (9.51, 3.09), (8.09, 5.88), (5.88, 8.09), (3.09, 9.51), (0, 10), (-3.09, 9.51), (-5.88, 8.09), (-8.09, 5.88), (-9.51, 3.09), (-10, 0), (-9.51, -3.09), (-8.09, -5.88), (-5.88, -8.09), (-3.09, -9.51), (-0.0, -10.0), (3.09, -9.51), (5.88, -8.09), (8.09, -5.88), (9.51, -3.09))
+            cir = ((10, 0), (9.51, 3.09), (8.09, 5.88),(5.88, 8.09),
+                   (3.09, 9.51), (0, 10), (-3.09, 9.51), (-5.88, 8.09),
+                   (-8.09, 5.88),(-9.51, 3.09), (-10, 0), (-9.51, -3.09),
+                   (-8.09, -5.88), (-5.88, -8.09), (-3.09, -9.51), (-0.0, -10.0),
+                   (3.09, -9.51), (5.88, -8.09), (8.09, -5.88), (9.51, -3.09))
             line = ((0,0),(0,10))
             s = turtle.Shape("compound")
             s.addcomponent(cir, color, "black")
@@ -40,16 +81,32 @@ class Robot(turtle.Turtle):
             screen.register_shape(str(color), s)
             self.shapes.append(str(color))
         return str(color)
-    def move(self, target):
+    
+    def overwriteRobot(self,x,y,col,w1,w2):
+        self.weights1 = w1
+        self.weights2 = w2
+        self.hideturtle()
+        self.penup()
+        if visualiseMode:
+            self.clear()
+            self.shape(self.createTurtleShape(col))
+            self.setheading(random.randint(0,360))
+            self.goto(x,y)
+            self.pendown()
+            self.showturtle()
+        else:
+            self.goto(x,y)
+        
+    def moveToTarget(self, target):
         global lines
         lines.append((self.pos(),target))
-        degrees = math.degrees(math.atan2(target[1]-self.pos()[1], target[0]-self.pos()[0]))
+        degrees = math.degrees(math.atan2(target[1]-self.pos()[1],
+                                          target[0]-self.pos()[0]))
         heading = self.heading()
         if autoHeading:
             self.setheading(degrees)
         else:
             if degrees < 0:
-                #print(degrees)
                 degrees = 360 + degrees
             if((heading-degrees+360)%360) > 180:
                 if heading > 180 and degrees < 180:
@@ -65,25 +122,92 @@ class Robot(turtle.Turtle):
         #print("Heading:",heading,", Target:",degrees)
         self.forward(self.distance(target))
 
+    def move(self, inputs):
+        output1 = 0
+        output2 = 0
+        for i in range(len(inputs)):
+            output1 += inputs[i] * self.weights1[i]
+            output2 += inputs[i] * self.weights2[i]
+
+        # move based on output 1 and 2
+
+    def evaluate(self):
+        #add fitness function
+        self.score = random.random()
+        return self.score
+
+def reproduceAndOverwrite(parent1, parent2, child):
+    global colors
+    if random.randint(0,1) == 0:
+        childW1 = parent1.weights1
+        childW2 = parent2.weights2
+    else:
+        childW1 = parent1.weights2
+        childW2 = parent2.weights1
+    child.overwriteRobot(
+        random.randint(xMin,xMax),
+        random.randint(yMin, yMax),
+        random.choice(colors),
+        childW1, childW2)
+    return child
+
+
+#start evolution
+
+#initialisation
 robots = [Robot(
-    random.randint(-(screenSize[0]/2),(screenSize[0]/2)),
-    random.randint(-(screenSize[1]/2),(screenSize[1]/2)),
-    random.choice(colors)) for r in range(numRobots)]
-
-target = turtle.Turtle(shape="circle", visible = False)
-target.penup()
-target.goto(random.randint(-(screenSize[0]/2),(screenSize[0]/2)),
-            random.randint(-(screenSize[1]/2),(screenSize[1]/2)))
-target.color("red")
-target.showturtle()
-
-for w in range(3):
+    random.randint(xMin,xMax),
+    random.randint(yMin,yMax),
+    random.choice(colors)) 
+          for r in range(numRobots)]
+#evaluation
+for w in range(steps):
     for s in range(len(robots)):
-        robots[s].move(target.pos())
-        target.hideturtle()
-        target.goto(random.randint(-(screenSize[0]/2),(screenSize[0]/2)),
-                    random.randint(-(screenSize[1]/2),(screenSize[1]/2)))
-        target.showturtle()
+        robots[s].moveToTarget((
+            random.randint(xMin,xMax),
+            random.randint(yMin,yMax)
+             ))
+        robots[s].evaluate()
+    
+#selection
+if keepRobots < keepExtra or keepRobots <= 0:
+    keepRobots = math.floor(numRobots / 2)
+    keepRobots = math.floor(keepRobots / 3)
+
+keepTopRobots = keepRobots - keepExtra
+
+sortedRobots = sorted(robots)
+topRobots = sortedRobots[0:keepTopRobots]
+flopRobots = sortedRobots[keepTopRobots:]
+for e in range(keepExtra):
+    topRobots.append(flopRobots.pop(random.randint(0,len(flopRobots)-1)))
+
+
+#reproduction
+newRobots = []
+for b in range(len(flopRobots)):
+    parents = random.sample(topRobots,2)
+    newRobots.append(reproduceAndOverwrite(parents[0],parents[1],flopRobots.pop()))
+    
+robots.clear()
+robots.extend(topRobots)
+robots.extend(newRobots)
+
+#crossover/mutation
+
+for m in range(mutationChance):
+    robot = random.choice(robots)
+    weightindex = random.randint(0,numSensors*2)
+    if weightindex <= numSensors:
+        robot.weights1[weightindex] = random.uniform(weightMin,weightMax)
+    else:
+        weightindex -= numSensors
+        robot.weights2[weightindex] = random.uniform(weightMin,weightMax)
+
+
+
+#end evolution
+
 
 
 def doLinesIntersect(line1, line2):
@@ -129,9 +253,10 @@ def pointOnLine(a,b,c):
         return False
 
 
-linea = ((0,0),(0,5))
-lineb = ((0,5),(2,6))
+##linea = ((0,0),(0,5))
+##lineb = ((0,5),(2,6))
+##
+##print(doLinesIntersect(linea, lineb))
 
-print(doLinesIntersect(linea, lineb))
 
 turtle.done()
