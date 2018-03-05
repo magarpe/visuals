@@ -1,0 +1,177 @@
+from __future__ import division
+import turtle, random, math
+from numpy import random
+
+
+
+colors = ["red", "green", "blue", "orange", "purple", "pink", "yellow"]
+screenSize = turtle.screensize()
+screen = turtle.Screen()
+
+robotSize = 25
+numRobots = 1
+tsize = 21
+autoHeading = False
+turtleSpeed = 4
+
+
+lines = []
+
+
+class Robot(turtle.Turtle):
+    shapes = []
+
+    def __init__(self, x, y, col):
+
+        global robotSize, tsize
+        """Turtle Constructor"""
+        turtle.Turtle.__init__(self, visible=False)
+        self.shape(self.createTurtleShape(col))
+        self.speed(turtleSpeed)
+        self.color(col)
+        self.turtlesize(robotSize / tsize)
+        #self.pensize(robotSize)
+        self.penup()
+        self.goto(x, y)
+        self.pendown()
+        self.pencolor("white")
+        #self.right(random.randint(0, 360))
+        self.showturtle()
+
+
+    def createTurtleShape(self, color):
+        global screen
+        if not str(color) in self.shapes:
+            cir = (
+            (10, 0), (9.51, 3.09), (8.09, 5.88), (5.88, 8.09), (3.09, 9.51), (0, 10), (-3.09, 9.51), (-5.88, 8.09),
+            (-8.09, 5.88), (-9.51, 3.09), (-10, 0), (-9.51, -3.09), (-8.09, -5.88), (-5.88, -8.09), (-3.09, -9.51),
+            (-0.0, -10.0), (3.09, -9.51), (5.88, -8.09), (8.09, -5.88), (9.51, -3.09))
+            line = ((0, 0), (0, 10))
+            s = turtle.Shape("compound")
+            s.addcomponent(cir, color, "black")
+            s.addcomponent(line, "black", "black")
+            screen.register_shape(str(color), s)
+            self.shapes.append(str(color))
+        return str(color)
+
+    def distance_to_line(self,p1,p2):
+        x_diff = p2[0] - p1[0]
+        y_diff = p2[1] - p1[1]
+        num = abs(y_diff * self.pos()[0]- x_diff * self.pos()[1] + p2[0] * p1[1] - p2[1] * p1[0])
+        den = math.sqrt(y_diff ** 2 + x_diff ** 2)
+        return num / den
+
+    # def line(self,po1, po2):
+    #     A = (po1[1] - po2[1])
+    #     B = (po2[0] - po1[0])
+    #     C = (po1[0] * po2[1] - po2[0] * po1[1])
+    #     return A, B, -C
+    #
+    # def intersection(self,L1, L2):
+    #     D = L1[0] * L2[1] - L1[1] * L2[0]
+    #     Dx = L1[2] * L2[1] - L1[1] * L2[2]
+    #     Dy = L1[0] * L2[2] - L1[2] * L2[0]
+    #     if D != 0:
+    #         x = Dx / D
+    #         y = Dy / D
+    #         return x, y
+    #     else:
+    #         return False
+
+    def move(self, target):
+        global lines
+        lines.append((self.pos(), target))
+        degrees = math.degrees(math.atan2(target[1] - self.pos()[1], target[0] - self.pos()[0]))
+        heading = self.heading()
+        if autoHeading:
+            self.setheading(degrees)
+        else:
+            if degrees < 0:
+                # print(degrees)
+                degrees = 360 + degrees
+            if ((heading - degrees + 360) % 360) > 180:
+                if heading > 180 and degrees < 180:
+                    self.left(360 - (heading - degrees))
+                else:
+                    self.left(degrees - heading)
+            else:
+                if heading < 180 and (degrees) > 180:
+                    self.right(360 - (degrees - heading))
+                else:
+                    self.right(heading-degrees)
+
+        # print("Heading:",heading,", Target:",degrees)
+        self.forward(self.distance(target))
+
+def main():
+    wallx1=0
+    wallx2=200
+    path=0
+    robotcenterx=50
+    robotcentery=50
+    step=10
+    dist=[]
+    dist_array=[]
+    theshold = 25
+    # boulder1 = turtle.Turtle(visible=False)
+    # boulder1.speed(3)
+    # boulder1.goto(wallx2, wallx1)
+    # boulder1.goto(wallx2, wallx2)
+    # boulder1.goto(wallx1, wallx2)
+    # boulder1.goto(wallx1, wallx1)
+
+    wallx1 -= path
+    wallx2 += path
+
+    boulder = turtle.Turtle(visible=False)
+   # boulder.goto(wallx1,wallx1)
+    boulder.speed(3)
+    boulder.goto(wallx2,wallx1)
+    boulder.goto(wallx2,wallx2)
+    boulder.goto(wallx1,wallx2)
+    boulder.goto(wallx1,wallx1)
+
+    robot1 = Robot(robotcenterx,robotcentery, "blue")
+    robot1.speed(1)
+    robot1.move((robotcenterx,robotcentery))
+    stepx=robotcenterx
+    stepy=robotcentery+step
+    # x30=robotcenterx+20*math.sin(math.radians(30))
+    # y30=robotcentery+20*math.cos(math.radians(30))
+    #
+    # L1 = robot1.line((robotcenterx,robotcentery),(x30,y30))
+    # L2 = robot1.line((wallx1,wallx2),(wallx2, wallx2))
+    #
+    # R = robot1.intersection(L1, L2)
+    # x=abs(R[0]-robotcenterx)
+    # y=abs(R[1]-robotcentery)
+    # dist1=math.sqrt((x**2)-(y**2))
+    # robot1.move((robotcenterx+dist1-10, robotcentery))
+
+    while True:
+        dist.clear()
+        dist_array.clear()
+        dist.append(robot1.distance_to_line((wallx2,wallx1),(wallx2,wallx2)))
+        dist.append(robot1.distance_to_line((wallx1,wallx2), (wallx2, wallx2)))
+        dist.append(robot1.distance_to_line((wallx1, wallx2), (wallx1, wallx1)))
+        dist.append(robot1.distance_to_line((wallx1,wallx1), (wallx2,wallx1)))
+        for i in range(0,4):
+            if(dist[i]>=theshold):
+                dist_array.append(i)
+        new=random.choice(dist_array,1)
+        if (new==0):
+            robotcenterx += step
+            robot1.move((robotcenterx, robotcentery))
+        elif(new==1):
+            robotcentery += step
+            robot1.move((robotcenterx, robotcentery))
+        elif(new==2):
+            robotcenterx -= step
+            robot1.move((robotcenterx, robotcentery))
+        elif(new==3):
+            robotcentery -= step
+            robot1.move((robotcenterx, robotcentery))
+
+    turtle.done()
+
+main()
