@@ -1,0 +1,102 @@
+import turtle, math
+
+turtle.speed(3)  # change this if you want the robot to move faster
+turtle.shape("circle")  # the robot shape
+turtle.pensize(8)  # thickness of the walls
+turtle.color("orange")  # color of the walls
+
+# drawing the limits (room walls for example)
+turtle.up()
+turtle.goto(-150, -150)
+turtle.down()
+turtle.goto(150, -150)
+turtle.goto(150, 150)
+turtle.goto(-150, 150)
+turtle.goto(-150, -150)
+turtle.up()
+turtle.goto(0, 0)
+turtle.down()
+turtle.color("black")  # color of the path of the robot
+turtle.pensize(2)
+turtle.speed(1)
+
+points = [(3, -40), (-160, -140), (-170, 180), (10, 100)
+    , (-160, 100), (-120, 90), (63, -200), (-50, -60)]
+
+for i in points:
+
+    if ((i[0] >= 150) and (i[1] >= 150)):
+        print('point', i, 'is out of range')
+        i = list(i)
+        i[0] = 150
+        i[1] = 150
+        x = math.degrees(math.atan2(i[1], i[0]))
+        turtle.seth(x)
+        turtle.goto(i)
+        turtle.dot(15, "red")
+        print('but point', i, 'is the nearest point to it')
+
+    elif ((i[0] <= -150) and (i[1] <= -150)):
+        print('point', i, 'is out of range')
+        i = list(i)
+        i[0] = -150
+        i[1] = -150
+        x = math.degrees(math.atan2(i[1], i[0]))
+        turtle.seth(x)
+        turtle.goto(i)
+        turtle.dot(15, "red")
+        print('but point', i, 'is the nearest point to it')
+    elif ((i[0] >= 150) and (i[1] <= -150)):
+        print('point', i, 'is out of range')
+        i = list(i)
+        i[0] = 150
+        i[1] = -150
+        x = math.degrees(math.atan2(i[1], i[0]))
+        turtle.seth(x)
+        turtle.goto(i)
+        turtle.dot(15, "red")
+        print('but point', i, 'is the nearest point to it')
+    elif ((i[0] <= -150) and (i[1] >= 150)):
+        print('point', i, 'is out of range')
+        i = list(i)
+        i[0] = 150
+        i[1] = 150
+        x = math.degrees(math.atan2(i[1], i[0]))
+        turtle.seth(x)
+        turtle.goto(i)
+        turtle.dot(15, "red")
+        print('but point', i, 'is the nearest point to it')
+    elif (i[0] <= -150):
+        print('point', i, 'is out of range')
+        x = math.degrees(math.atan2(i[1], i[0]))
+        turtle.seth(x)
+        turtle.goto(-150, i[1])
+        turtle.dot(15, "red")
+        print('but point', i, 'is the nearest point to it')
+    elif (i[1] <= -150):
+        print('point', i, 'is out of range')
+        x = math.degrees(math.atan2(i[1], i[0]))
+        turtle.seth(x)
+        turtle.goto(i[0], -150)
+        turtle.dot(15, "red")
+        print('but point', i, 'is the nearest point to it')
+    elif (i[0] >= 150):
+        print('point', i, 'is out of range')
+        x = math.degrees(math.atan2(i[1], i[0]))
+        turtle.seth(x)
+        turtle.goto(150, i[1])
+        turtle.dot(15, "red")
+        print('but point', i, 'is the nearest point to it')
+
+    elif (i[1] >= 150):
+        print('point', i, 'is out of range')
+        x = math.degrees(math.atan2(i[1], i[0]))
+        turtle.seth(x)
+        turtle.goto(i[0], 150)
+        turtle.dot(15, "red")
+        print('but point', i, 'is the nearest point to it')
+
+    else:
+        x = math.degrees(math.atan2(i[1], i[0]))
+turtle.seth(x)
+turtle.goto(i)
