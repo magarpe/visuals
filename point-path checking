@@ -1,0 +1,67 @@
+import turtle, math
+
+#width and length of path
+width = 20
+length = 100
+
+#point to be checked
+point = (100,0)
+
+
+e = turtle.Turtle(visible=False)
+e.speed(0)
+t = turtle.Turtle()
+t.setheading(0)
+
+right = t.heading()-90
+left = t.heading()+90
+
+if t.heading() < 90:
+    right += 360
+elif t.heading() > 270:
+    left -= 360
+
+start1 = ((width/2)*math.cos(math.radians(right)), (width/2)*math.sin(math.radians(right)))
+start2 = ((width/2)*math.cos(math.radians(left)), (width/2)*math.sin(math.radians(left)))
+e.penup()
+e.goto(start1)
+e.setheading(t.heading())
+e.pendown()
+e.forward(length)
+end1 = e.pos()
+
+e.penup()
+e.goto(start2)
+e.setheading(t.heading())
+e.pendown()
+e.forward(length)
+end2 = e.pos()
+
+e.penup()
+e.goto(point)
+e.dot()
+
+def pointInRectangle(m, r):
+    A,B,C,D = r
+    Ax,Ay = A
+    Bx,By = B
+    Cx,Cy = C
+    Mx,My = m
+    AB = ((Bx-Ax),(By-Ay))
+    AM = ((Mx-Ax),(My-Ay))
+    BC = ((Cx-Bx),(Cy-By))
+    BM = ((Mx-Bx),(My-By))
+    ABx,ABy = AB
+    AMx,AMy = AM
+    BCx,BCy = BC
+    BMx,BMy = BM
+    dotABAM = ABx*AMx + ABy*AMy
+    dotABAB = ABx*ABx + ABy*ABy
+    dotBCBM = BCx*BMx + BCy*BMy
+    dotBCBC = BCx*BCx + BCy*BCy
+    return 0 <= dotABAM and dotABAM <= dotABAB and 0 <= dotBCBM and dotBCBM <= dotBCBC;
+
+print(pointInRectangle(point, (start1,end1,end2,start2)))
+
+
+turtle.done()
