@@ -1,4 +1,6 @@
 import turtle, random, math
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 colors  = ["red","green","blue","orange","purple","pink","yellow"]
 screenSize = turtle.screensize()
@@ -11,11 +13,12 @@ linesize = 2
 turtleSpeed = 8
 autoHeading = False
 visualiseMode = True
+showDust = False
 
-xMax = (screenSize[0]/2)
-xMin = -(screenSize[0]/2)
-yMax = (screenSize[1]/2)
-yMin = -(screenSize[1]/2)
+xMax = (screenSize[0]-robotSize)
+xMin = -(screenSize[0]+robotSize)
+yMax = (screenSize[1]-robotSize)
+yMin = -(screenSize[1]+robotSize)
 
 weightMin = 0
 weightMax = 2
@@ -29,15 +32,31 @@ mutationChance = 1
 
 lines = []
 
+if visualiseMode and showDust:
+    dustTurtle = turtle.Turtle(visible=False)
+    dustTurtle.pensize(1)
+    dustTurtle.color("black")
+    dustTurtle.speed(0)
+    dustTurtle.penup()
+
+dust = []
+for d in range(500):
+    dustparticle = random.uniform(xMin,xMax),random.uniform(yMin,yMax)
+    if visualiseMode and showDust:
+        dustTurtle.goto(dustparticle)
+        dustTurtle.dot()
+    dust.append(dustparticle)
+
 class Robot(turtle.Turtle):
     shapes = []
     weights1 = {}
     weights2 = {}
     score = None
+    dust = 0
 
     def __repr__(self):
-        return '{}: {}'.format(self.__class__.__name__, self.score)
-        
+        return '{}: {}'.format(self.__class__.__name__,
+                                  self.score)
     def __lt__(self, other):
          return self.score < other.score
         
@@ -151,7 +170,6 @@ def reproduceAndOverwrite(parent1, parent2, child):
         childW1, childW2)
     return child
 
-
 #start evolution
 
 #initialisation
@@ -160,103 +178,52 @@ robots = [Robot(
     random.randint(yMin,yMax),
     random.choice(colors)) 
           for r in range(numRobots)]
-#evaluation
-for w in range(steps):
-    for s in range(len(robots)):
-        robots[s].moveToTarget((
-            random.randint(xMin,xMax),
-            random.randint(yMin,yMax)
-             ))
-        robots[s].evaluate()
-    
-#selection
-if keepRobots < keepExtra or keepRobots <= 0:
-    keepRobots = math.floor(numRobots / 2)
-    keepRobots = math.floor(keepRobots / 3)
 
-keepTopRobots = keepRobots - keepExtra
+for l in range(15):
+    #evaluation
+    for w in range(steps):
+        for s in range(len(robots)):
+            robots[s].moveToTarget((
+                random.randint(xMin,xMax),
+                random.randint(yMin,yMax)
+                 ))
+            robots[s].evaluate()
+        
+    #selection
+    if keepRobots < keepExtra or keepRobots <= 0:
+        keepRobots = math.floor(numRobots / 2)
+        keepRobots = math.floor(keepRobots / 3)
 
-sortedRobots = sorted(robots)
-topRobots = sortedRobots[0:keepTopRobots]
-flopRobots = sortedRobots[keepTopRobots:]
-for e in range(keepExtra):
-    topRobots.append(flopRobots.pop(random.randint(0,len(flopRobots)-1)))
+    keepTopRobots = keepRobots - keepExtra
 
-
-#reproduction
-newRobots = []
-for b in range(len(flopRobots)):
-    parents = random.sample(topRobots,2)
-    newRobots.append(reproduceAndOverwrite(parents[0],parents[1],flopRobots.pop()))
-    
-robots.clear()
-robots.extend(topRobots)
-robots.extend(newRobots)
-
-#crossover/mutation
-
-for m in range(mutationChance):
-    robot = random.choice(robots)
-    weightindex = random.randint(0,numSensors*2)
-    if weightindex <= numSensors:
-        robot.weights1[weightindex] = random.uniform(weightMin,weightMax)
-    else:
-        weightindex -= numSensors
-        robot.weights2[weightindex] = random.uniform(weightMin,weightMax)
+    sortedRobots = sorted(robots)
+    topRobots = sortedRobots[0:keepTopRobots]
+    flopRobots = sortedRobots[keepTopRobots:]
+    for e in range(keepExtra):
+        topRobots.append(flopRobots.pop(random.randint(0,len(flopRobots)-1)))
 
 
+    #reproduction
+    newRobots = []
+    for b in range(len(flopRobots)):
+        parents = random.sample(topRobots,2)
+        newRobots.append(reproduceAndOverwrite(parents[0],parents[1],flopRobots.pop()))
+        
+    robots.clear()
+    robots.extend(topRobots)
+    robots.extend(newRobots)
 
-#end evolution
+    #crossover/mutation
 
+    for m in range(mutationChance):
+        robot = random.choice(robots)
+        weightindex = random.randint(0,numSensors*2)
+        if weightindex <= numSensors:
+            robot.weights1[weightindex] = random.uniform(weightMin,weightMax)
+        else:
+            weightindex -= numSensors
+            robot.weights2[weightindex] = random.uniform(weightMin,weightMax)
 
-
-def doLinesIntersect(line1, line2):
-    if doBoundingBoxesIntersect(line1[0],line1[1],line2[0],line2[1]) and checkLinesTouchOrCross(line1,line2) and checkLinesTouchOrCross(line2,line1):
-        return True
-    else:
-        return False
-
-def checkLinesTouchOrCross(line1, line2):
-    if (checkPointOnLeft(line1[0], line1[1], line2[0]) is None):
-        if pointOnLine(line1[0], line1[1], line2[0]):
-            return True
-    elif (checkPointOnLeft(line1[0], line1[1], line2[1]) is None):
-        if pointOnLine(line1[0], line1[1], line2[1]):
-            return True
-    elif checkPointOnLeft(line1[0], line1[1], line2[0]) ^ checkPointOnLeft(line1[0], line1[1], line2[1]):
-        return True
-    else:
-        return False     
-    
-
-#line ab, line cd
-def doBoundingBoxesIntersect(a,b,c,d):
-    if a[0] <= d[0] and b[0] >= c[0] and a[1] <= d[1] and b[1] >= c[1]:
-        return True
-
-#return none for collinear, true for left, false for right
-def checkPointOnLeft(a, b, c):
-    triangle = (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])
-
-    if triangle == 0:
-        return None
-    elif triangle > 0:
-        return True
-    elif triangle < 0:
-        return False
-    
-#line ab, point c
-def pointOnLine(a,b,c):
-    if (a[0] <= c[0] <= b[0]) or (b[0] <= c[0] <= a[0]) or (a[1] <= c[1] <= b[1]) or (b[1] <= c[1] <= a[1]):
-        return True
-    else:
-        return False
-
-
-##linea = ((0,0),(0,5))
-##lineb = ((0,5),(2,6))
-##
-##print(doLinesIntersect(linea, lineb))
-
+    #end evolution
 
 turtle.done()
