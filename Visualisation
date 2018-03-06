@@ -1,6 +1,4 @@
 import turtle, random, math
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 
 colors  = ["red","green","blue","orange","purple","pink","yellow"]
 screenSize = turtle.screensize()
@@ -163,12 +161,9 @@ def reproduceAndOverwrite(parent1, parent2, child):
     else:
         childW1 = parent1.weights2
         childW2 = parent2.weights1
-    child.overwriteRobot(
-        random.randint(xMin,xMax),
-        random.randint(yMin, yMax),
-        random.choice(colors),
-        childW1, childW2)
+    child.overwriteRobot(random.randint(xMin,xMax), random.randint(yMin, yMax), random.choice(colors), childW1, childW2)
     return child
+
 
 #start evolution
 
