@@ -1,0 +1,17 @@
+# the clean array is to calculate cleaning space
+#10000 for 100*100
+clean=[0]*10000
+
+# arr is the location where i will insert 1 so that aar location is clean
+arr = robotcenterx + (robotcentery * 100)
+clean.insert(arr, 1)
+
+
+#find the percentage of cleaning area
+    sum = 0
+    for i in range(0, 10000):
+        if (clean[i]!= 0):
+            sum += 1
+
+    per = (sum * 100) / 10000
+    print('the cleaning area is :=', per,'\n','the sum=',sum)
