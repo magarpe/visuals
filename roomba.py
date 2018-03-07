@@ -1,27 +1,4 @@
-import turtle, random, math
-import numpy as np
-import matplotlib.pyplot as plt
 
-colors = ["red", "green", "blue", "orange", "purple", "pink", "yellow"]
-screenSize = turtle.screensize()
-screen = turtle.Screen()
-
-numSensors = 12
-robotSize = 25
-tsize = 21  # turtle size
-linesize = 2
-turtleSpeed = 1
-autoHeading = False
-visualiseMode = True
-showDust = False
-
-# xMax = (screenSize[0] - robotSize)
-# xMin = -(screenSize[0] + robotSize)
-# yMax = (screenSize[1] - robotSize)
-# yMin = -(screenSize[1] + robotSize)
-xMax = 200
-xMin = -50
-yMax = 200
 yMin = -50
 
 
@@ -137,26 +114,28 @@ class Robot(turtle.Turtle):
     def moveToTarget(self, target):
         global lines
         lines.append((self.pos(), target))
-        degrees = math.degrees(math.atan2(target[1] - self.pos()[1],
-                                          target[0] - self.pos()[0]))
-        heading = self.heading()
-        if autoHeading:
-            self.setheading(degrees)
-        else:
-            if degrees < 0:
-                degrees = 360 + degrees
-            if ((heading - degrees + 360) % 360) > 180:
-                if heading > 180 > degrees:
-                    self.left(360 - (heading - degrees))
-                else:
-                    self.left(degrees - heading)
-            else:
-                if heading < 180 < (degrees):
-                    self.right(360 - (degrees - heading))
-                else:
-                    self.right(heading - degrees)
+        # degrees = math.degrees(math.atan2(target[1] - self.pos()[1],
+        #                                   target[0] - self.pos()[0]))
+        # heading = self.heading()
+        # if autoHeading:
+        #     self.setheading(degrees)
+        # else:
+        #     if degrees < 0:
+        #         degrees = 360 + degrees
+        #     if ((heading - degrees + 360) % 360) > 180:
+        #         if heading > 180 > degrees:
+        #             self.left(360 - (heading - degrees))
+        #         else:
+        #             self.left(degrees - heading)
+        #     else:
+        #         if heading < 180 < (degrees):
+        #             self.right(360 - (degrees - heading))
+        #         else:
+        #             self.right(heading - degrees)
 
-        self.forward(self.distance(target))
+        self.goto(target[0], target[1])
+        self.setheading(target[2])
+        # self.forward(self.distance(target))
 
     def move(self, inputs):
         output1 = 0                 # NN (inputs are sensors, outputs are the engines)
@@ -165,9 +144,12 @@ class Robot(turtle.Turtle):
             output1 += inputs[i] * self.weightsr[i]
             output2 += inputs[i] * self.weightsl[i]
 
-        # self.xyi = self.xyi + 1
+        print (self.xyi)
+        self.xyi += self.xyi
+        print (self.xyi)
         self.xy[self.xyi+1] = self.kinematics(output1, output2)  # calculates new point (kinematics), adds to positions
-        self.moveToTarget(np.array([0, 1]))  # self.xy[1][:2])  this is what i want                  # visualisation
+        xytry = (self.xy[1][0][0], self.xy[1][1][0], self.xy[1][2][0])
+        self.moveToTarget(xytry)               # visualisation
         # move based on output 1 and 2
 
     def evaluate(self):
@@ -292,7 +274,6 @@ boulder.end_fill()
 
 robot = Robot(0, 0, 0, "green")                 # creates 1 robot position [x, y, teta (angle), color)
 
-while 1:
-    robot.move(robot.sensors(wall))                 # move(function) according to the sensors(function)
+robot.move(robot.sensors(wall))                 # move(function) according to the sensors(function)
 
 turtle.done()
