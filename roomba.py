@@ -135,30 +135,8 @@ class Robot(turtle.Turtle):
             self.goto(x, y)
 
     def moveToTarget(self, target):
-        global lines
-        lines.append((self.pos(), target))
-        # degrees = math.degrees(math.atan2(target[1] - self.pos()[1],
-        #                                   target[0] - self.pos()[0]))
-        # heading = self.heading()
-        # if autoHeading:
-        #     self.setheading(degrees)
-        # else:
-        #     if degrees < 0:
-        #         degrees = 360 + degrees
-        #     if ((heading - degrees + 360) % 360) > 180:
-        #         if heading > 180 > degrees:
-        #             self.left(360 - (heading - degrees))
-        #         else:
-        #             self.left(degrees - heading)
-        #     else:
-        #         if heading < 180 < (degrees):
-        #             self.right(360 - (degrees - heading))
-        #         else:
-        #             self.right(heading - degrees)
-
         self.goto(target[0], target[1])
         self.setheading(target[2])
-        # self.forward(self.distance(target))
 
     def move(self, inputs):
         output1 = 0                 # NN (inputs are sensors, outputs are the engines)
@@ -167,11 +145,9 @@ class Robot(turtle.Turtle):
             output1 += inputs[i] * self.weightsr[i]
             output2 += inputs[i] * self.weightsl[i]
 
-        print (self.xyi)
-        self.xyi += self.xyi
-        print (self.xyi)
         self.xy[self.xyi+1] = self.kinematics(output1, output2)  # calculates new point (kinematics), adds to positions
-        xytry = (self.xy[1][0][0], self.xy[1][1][0], self.xy[1][2][0])
+        self.xyi += 1
+        xytry = (self.xy[self.xyi][0][0], self.xy[self.xyi][1][0], self.xy[self.xyi][2][0])
         self.moveToTarget(xytry)               # visualisation
         # move based on output 1 and 2
 
@@ -181,19 +157,23 @@ class Robot(turtle.Turtle):
         return self.score
 
     def sensors(self, wall):
-        pi = self.xy[self.xyi]
-        sensx = np.array(
+        if self.xyi == 0:           # sets the initial position
+            pi = self.xy[self.xyi]
+        else:
+            pi = np.array([self.xy[self.xyi][0][0], self.xy[self.xyi][1][0], self.xy[self.xyi][2][0]])
+
+        sensx = np.array(       # 12 sensors, circle radius1
             [1, np.cos(np.pi / 6), np.cos(np.pi / 3), 0, -np.cos(np.pi / 3), -np.cos(np.pi / 6), -1, -np.cos(np.pi / 6),
              -np.cos(np.pi / 3), 0, np.cos(np.pi / 3), np.cos(np.pi / 6), 1])
         sensy = np.array(
             [0, np.cos(np.pi / 3), np.cos(np.pi / 6), 1, np.cos(np.pi / 6), np.cos(np.pi / 3), 0, -np.cos(np.pi / 3),
              -np.cos(np.pi / 6), -1, -np.cos(np.pi / 6), -np.cos(np.pi / 3), 0])
 
-        sensor = np.ones(12) * 100
+        sensor = np.ones(12) * sl      # sets the length and the position of the sensors
 
-        for x in range(0, numSensors):
-            for i in range(0, wall.shape[1] - 1):
-                a1 = np.array([pi[0], pi[1]])
+        for x in range(0, numSensors):      # for each sensor
+            for i in range(0, wall.shape[1] - 1):       # for each wall
+                a1 = np.array([pi[0], pi[1]])           # look for intersection, check the intersection is in the lines
                 a2 = np.array([sensx[x], sensy[x]]) * sl + pi[:2]
 
                 b1 = np.array([wall[0, i], wall[1, i]])
@@ -207,28 +187,28 @@ class Robot(turtle.Turtle):
                 denom = np.dot(dap, db)
                 num = np.dot(dap, dp)
 
-                if ((abs(da[0]) == abs(db[0])) and (abs(da[1]) == abs(db[1]))) == 0:  # not paralels
+                if ((abs(db[0]) == abs(da[0])) and (abs(da[1]) == abs(db[1]))) == 0:  # not parallels
                     x3 = ((num / denom.astype(float)) * db + b1)[0]
-                    y3 = ((num / denom.astype(float)) * db + b1)[1]  # intersection of the lines
+                    y3 = ((num / denom.astype(float)) * db + b1)[1]  # x3, y3 :intersection of the lines
 
                     if ((a1[0] >= x3 >= a2[0]) | (a2[0] >= x3 >= a1[0])) and \
                             ((a1[1] >= y3 >= a2[1]) | (a2[1] >= y3 >= a1[1])) and \
                             ((b1[0] >= x3 >= b2[0]) | (b2[0] >= x3 >= b1[0])) and \
-                            ((b1[1] >= y3 >= b2[1]) | (b2[1] >= y3 >= b1[1])):
+                            ((b1[1] >= y3 >= b2[1]) | (b2[1] >= y3 >= b1[1])):      # they are in the lines
                         inter = np.array([x3, y3])
                         distance = np.sqrt((inter[0] - pi[0]) ** 2 + (inter[1] - pi[1]) ** 2)
                         if distance < sensor[x]:
-                            sensor[x] = distance
-                            # sensx = inter[0]/sl - pi[0]
-                            # sensy = inter[1]/sl - pi[1]
+                            sensor[x] = distance        # update if the current value is the smaller
 
-                # plt.plot([pi[0], pi[0] + sensx[x] * sl], [pi[1], pi[1] + sensy[x] * sl], 'b')
-
-        return(sensor)
+        return(sensor)      # return array of 12 numbers (the output of each sensor)
 
     def kinematics(self, ml, mr):
-        pi = self.xy[self.xyi]
-        if mr == ml:  # no rotation
+        if self.xyi == 0:           # sets the initial position
+            pi = self.xy[self.xyi]
+        else:
+            pi = np.array([self.xy[self.xyi][0][0], self.xy[self.xyi][1][0], self.xy[self.xyi][2][0]])
+
+        if mr == ml:  # no rotation equations
             vc = (mr + ml) / 2
             po = pi + np.array([vc * d, vc * d, 0])
 
@@ -243,7 +223,7 @@ class Robot(turtle.Turtle):
                 [np.sin(w * d), np.cos(w * d), 0],
                 [0, 0, 1]
             ])
-
+            
             secmax = np.array([  # second matrix (multiplies rotation one)
                 [pi[0] - icc[0]],
                 [pi[1] - icc[1]],
@@ -274,9 +254,6 @@ def reproduceAndOverwrite(parent1, parent2, child):
     return child
 
 
-# start evolution
-
-
 # initialisation
 
 wall = np.array([               # nodes of the wall
@@ -297,6 +274,9 @@ boulder.end_fill()
 
 robot = Robot(0, 0, 0, "green")                 # creates 1 robot position [x, y, teta (angle), color)
 
-robot.move(robot.sensors(wall))                 # move(function) according to the sensors(function)
+# movement of the robot
+
+for mov in range (0, 10):
+    robot.move(robot.sensors(wall))                 # move(function) according to the sensors(function)
 
 turtle.done()
