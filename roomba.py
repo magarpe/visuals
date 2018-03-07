@@ -10,7 +10,7 @@ numSensors = 12
 robotSize = 25
 tsize = 21  # turtle size
 linesize = 2
-turtleSpeed = 1
+turtleSpeed = 2
 autoHeading = False
 visualiseMode = True
 showDust = False
@@ -63,8 +63,10 @@ for d in range(500):
 
 class Robot(turtle.Turtle):
     shapes = []
-    weightsr = {}
-    weightsl = {}
+    weights1 = {}
+    weights2 = {}
+    output1 = 0
+    output2 = 0
     score = None
     dust = 0
     xy = {}
@@ -81,8 +83,11 @@ class Robot(turtle.Turtle):
         global robotSize, tsize, linesize
         self.xy[0] = np.array([x, y, teta])
         for w in range(numSensors):
-            self.weightsr[w] = random.uniform(weightMin, weightMax)     # chooses random weights
-            self.weightsl[w] = random.uniform(weightMin, weightMax)
+            self.weights1[w] = random.uniform(weightMin, weightMax)     # chooses random weights
+            self.weights2[w] = random.uniform(weightMin, weightMax)
+            self.weights1[12] = random.uniform(weightMin, weightMax)*10     # recursive with the motors
+            self.weights2[12] = random.uniform(weightMin, weightMax)*10
+
         turtle.Turtle.__init__(self, visible=False)
         if visualiseMode:
             self.shapesize(outline=linesize)
@@ -120,8 +125,8 @@ class Robot(turtle.Turtle):
         return str(color)
 
     def overwriteRobot(self, x, y, col, wr, wl):
-        self.weightsr = wr
-        self.weightsl = wl
+        self.weights1 = wr
+        self.weights2 = wl
         self.hideturtle()
         self.penup()
         if visualiseMode:
@@ -138,14 +143,16 @@ class Robot(turtle.Turtle):
         self.goto(target[0], target[1])
         self.setheading(target[2])
 
-    def move(self, inputs):
-        output1 = 0                 # NN (inputs are sensors, outputs are the engines)
-        output2 = 0
-        for i in range(len(inputs)):                # calculate the output based on inputs and weights of the individual
-            output1 += inputs[i] * self.weightsr[i]
-            output2 += inputs[i] * self.weightsl[i]
+    def move(self, inputs):                     # NN (inputs are sensors, outputs are the engines)
+        self.output1 *= self.weights1[12]             # repulsiveness
+        self.output2 *= self.weights2[12]
 
-        self.xy[self.xyi+1] = self.kinematics(output1, output2)  # calculates new point (kinematics), adds to positions
+        for i in range(len(inputs)):                # calculate the output based on inputs and weights of the individual
+            self.output1 += inputs[i] * self.weights1[i]
+            self.output2 += inputs[i] * self.weights2[i]
+
+
+        self.xy[self.xyi+1] = self.kinematics()  # calculates new point (kinematics), adds to positions
         self.xyi += 1
         xytry = (self.xy[self.xyi][0][0], self.xy[self.xyi][1][0], self.xy[self.xyi][2][0])
         self.moveToTarget(xytry)               # visualisation
@@ -202,7 +209,9 @@ class Robot(turtle.Turtle):
 
         return(sensor)      # return array of 12 numbers (the output of each sensor)
 
-    def kinematics(self, ml, mr):
+    def kinematics(self):
+        ml = self.output1
+        mr = self.output2
         if self.xyi == 0:           # sets the initial position
             pi = self.xy[self.xyi]
         else:
@@ -223,7 +232,7 @@ class Robot(turtle.Turtle):
                 [np.sin(w * d), np.cos(w * d), 0],
                 [0, 0, 1]
             ])
-            
+
             secmax = np.array([  # second matrix (multiplies rotation one)
                 [pi[0] - icc[0]],
                 [pi[1] - icc[1]],
