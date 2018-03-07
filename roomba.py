@@ -1,4 +1,27 @@
+import turtle, random, math
+import numpy as np
+import matplotlib.pyplot as plt
 
+colors = ["red", "green", "blue", "orange", "purple", "pink", "yellow"]
+screenSize = turtle.screensize()
+screen = turtle.Screen()
+
+numSensors = 12
+robotSize = 25
+tsize = 21  # turtle size
+linesize = 2
+turtleSpeed = 1
+autoHeading = False
+visualiseMode = True
+showDust = False
+
+# xMax = (screenSize[0] - robotSize)
+# xMin = -(screenSize[0] + robotSize)
+# yMax = (screenSize[1] - robotSize)
+# yMin = -(screenSize[1] + robotSize)
+xMax = 200
+xMin = -50
+yMax = 200
 yMin = -50
 
 
