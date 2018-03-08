@@ -1,0 +1,143 @@
+import turtle, random, math,copy
+
+
+numberofsensor=12
+numberofpopulation=10
+numberofbumping=2
+newarea=5
+population= [[0 for x in range(numberofsensor)] for y in range(numberofpopulation)]
+reproduction=[[0 for x in range(numberofsensor)]for y in range(numberofpopulation)]
+index=[0 for x in range(3)]
+
+tmemory1=[]
+tmemory2=[]
+
+def genetic_algorithm():
+
+    initial_population()
+
+    for generation in range(0,20):
+        rank_population=[[0 for x in range(numberofsensor)] for y in range(numberofpopulation)]
+        rank_population_fit=[0 for x in range(numberofpopulation)]
+        for one in range(0,numberofpopulation):
+            fit=fitness(population[one])
+            #rank_population_fit contains the fitness and rank_population have same data
+            rank_population_fit[one]=fit
+            for j in range(numberofsensor):
+                rank_population[one][j]=population[one][j]
+
+
+   
+    selection(rank_population_fit,rank_population)
+
+
+
+def initial_population():
+    for i in range(numberofpopulation):
+        for j in range(numberofsensor):
+            population[i][j]=random.randrange(0,20,1)
+
+    # print('Population:')
+    # for i in range(numberofpopulation):
+    #     for j in range(numberofsensor):
+    #         print(population[i][j], end='     ')
+    #     print()
+
+def my_max(array):
+    a=max(array)
+    array.remove(a)
+    b=max(array)
+    array.remove(b)
+    c=max(array)
+
+    return a,b,c
+
+def selection(rank,rank_population):
+
+    index[0],index[1],index[2]=my_max(rank)
+
+    # print('Rank_population:')
+    # for i in range(10):
+    #     for j in range(12):
+    #         print(rank_population[i][j], end='     ')
+    #     print()
+
+    counter=0
+    for i in range(0,3):
+        max1=index[i]
+        for j in range(0,numberofpopulation):
+            if(max1==rank[j]):
+                for k in range(0,numberofsensor):
+                    reproduction[counter][k]=rank_population[j][k]
+
+                if(counter==(numberofpopulation-1)):
+                    break
+                counter = counter+1
+                for k in range(0,numberofsensor):
+                    reproduction[counter][k]=rank_population[j][k]
+                if (counter == (numberofpopulation - 1)):
+                     break
+                counter = counter + 1
+                for k in range(0, numberofsensor):
+                    reproduction[counter][k] = rank_population[j][k]
+                if (counter == (numberofpopulation - 1)):
+                     break
+                counter=counter+1
+            if(counter==numberofpopulation):
+                i=4
+                j=numberofpopulation
+
+    # if(counter<numberofpopulation):
+    #     counter=counter-1
+    #     for i in range(0,(numberofpopulation-counter)):
+    #         for k in range(numberofsensor):
+    #             reproduction[counter][k] = rank_population[j][k]
+    #             counter+=1
+
+    print('Before crossover Reproduction:')
+    for i in range(10):
+        for j in range(12):
+            print(reproduction[i][j], end='     ')
+        print()
+
+    parents1=random.randint(0,9)
+    parents2=random.randint(0,9)
+    reproduction[parents1]=crossover(reproduction[parents1],reproduction[parents2])
+
+    print('After crossover Reproduction:')
+    for i in range(10):
+        for j in range(12):
+            print(reproduction[i][j], end='     ')
+        print()
+
+
+def crossover(array1,array2):
+    if(random.randint(0,1)==0):
+        choromosome1=array1[:6]
+        choromosome2=array2[6:]
+        totalchoromosome=choromosome1+choromosome2
+    else:
+        choromosome2 = array1[:6]
+        choromosome1 = array2[6:]
+        totalchoromosome = choromosome1 + choromosome2
+    return totalchoromosome
+
+def mutation(array):
+    array_out=""
+    for i in range(0,numberofsensor):
+        if random.randint(0,20)==1:
+            array_out +=random.randint(0,20)
+        else:
+            array_out +=array[i]
+    return array_out
+
+def fitness(array):
+    fit=1
+    fit=1+newarea*10-numberofbumping
+    if fit<0: fit=0
+    return fit
+
+def main():
+    genetic_algorithm()
+
+main()
