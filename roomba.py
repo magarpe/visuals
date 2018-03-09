@@ -1,28 +1,3 @@
-import turtle, random, math
-import numpy as np
-
-colors = ["red", "green", "blue", "orange", "purple", "pink", "yellow"]
-screenSize = turtle.screensize()
-screen = turtle.Screen()
-
-numSensors = 12
-robotSize = 25
-tsize = 21  # turtle size
-linesize = 2
-turtleSpeed = 10
-autoHeading = False
-visualiseMode = True
-showDust = False
-numberofpopulation=10
-
-# I need to change those two parameter according to calculation
-numberofbumping=2
-newarea=5
-
-population= [[0 for x in range(numSensors)] for y in range(numberofpopulation)]
-reproduction=[[0 for x in range(numSensors)]for y in range(numberofpopulation)]
-index=[0 for x in range(3)]
-# xMax = (screenSize[0] - robotSize)
 # xMin = -(screenSize[0] + robotSize)
 # yMax = (screenSize[1] - robotSize)
 # yMin = -(screenSize[1] + robotSize)
@@ -31,8 +6,8 @@ xMin = -50
 yMax = 200
 yMin = -50
 
-weightMin = 0
-weightMax = 1
+weightMin = 950
+weightMax = 1000
 
 numRobots = 1
 steps = 1
@@ -91,8 +66,8 @@ class Robot(turtle.Turtle):
         for w in range(numSensors):
             self.weights1[w] = random.uniform(weightMin, weightMax)  # chooses random weights
             self.weights2[w] = random.uniform(weightMin, weightMax)
-        self.weights1[12] = random.uniform(weightMin, weightMax) * 10  # recursive with the motors
-        self.weights2[12] = random.uniform(weightMin, weightMax) * 10
+        self.weights1[12] = random.uniform(0, 1)  # recursive with the motors
+        self.weights2[12] = random.uniform(0, 1)
         for w in range(13, 15):
             self.weights1[w] = random.uniform(weightMin, weightMax) * 10  # for an average of points (x,y) covered
             self.weights2[w] = random.uniform(weightMin, weightMax) * 10
@@ -232,7 +207,7 @@ class Robot(turtle.Turtle):
                     denom = np.dot(dap, db)
                     num = np.dot(dap, dp)
 
-                    if ((abs(db[0]) == abs(da[0])) and (abs(da[1]) == abs(db[1]))) == 0:  # not parallels
+                    if ((abs(db[0]) == abs(da[0])) and (abs(da[1]) == abs(db[1]))) == 0 and (denom != 0):  # not parallels
                         x3 = ((num / denom.astype(float)) * db + b1)[0]
                         y3 = ((num / denom.astype(float)) * db + b1)[1]  # x3, y3 :intersection of the lines
 
@@ -248,6 +223,7 @@ class Robot(turtle.Turtle):
         return (sensor)  # return array of 12 numbers (the output of each sensor)
 
     def kinematics(self):
+        delta = 1000000
         ml = self.output1
         mr = self.output2
         if self.xyi == 0:  # sets the initial position
@@ -257,10 +233,9 @@ class Robot(turtle.Turtle):
 
         if mr == ml:  # no rotation equations
             vc = (mr + ml) / 2
-            po = pi + np.array([vc * d, vc * d, 0])
+            po = pi + np.array([vc * delta, vc * delta, 0])
 
         else:  # rotation equations
-            delta = 10
             r = 0.5 * (ml + mr) / (mr - ml)  # radius of rotation
             w = (mr - ml) / robotSize  # angular velocity
 
@@ -283,7 +258,7 @@ class Robot(turtle.Turtle):
                 [icc[1]],
                 [w * delta]
             ])
-
+        print(po)
         return po
 
 
@@ -362,21 +337,21 @@ def selection(rank,rank_population):
                 reproduction[j][i] = rank_population[index[2]][i]
 
 
-    print('Before crossover Reproduction:')
-    for i in range(10):
-        for j in range(12):
-            print(reproduction[i][j], end='     ')
-        print()
+    # print('Before crossover Reproduction:')
+    # for i in range(10):
+    #     for j in range(12):
+        #     print(reproduction[i][j], end='     ')
+        # print()
 
     parents1=random.randint(0,9)
     parents2=random.randint(0,9)
     reproduction[parents1]=crossover(reproduction[parents1],reproduction[parents2])
 
-    print('After crossover Reproduction:')
-    for i in range(10):
-        for j in range(12):
-            print(reproduction[i][j], end='     ')
-        print()
+    # print('After crossover Reproduction:')
+    # for i in range(10):
+    #     for j in range(12):
+            # print(reproduction[i][j], end='     ')
+        # print()
 
 
 def crossover(array1,array2):
@@ -412,16 +387,15 @@ def fitness(array):
 
 wall = np.array([
     np.array([  # nodes of the wall
-        [220, 220, 120, 120, 220],
-        [120, 220, 220, 120, 120]
+        [50, 100, 100, 50, 50],
+        [50, 50, 100, 100, 50]
     ]),
     np.array([  # nodes of the wall
-        [0, 0, 300, 300, 0],
-        [0, 300, 300, 0, 0]
+        [0, 0, 200, 200, 0],
+        [0, 200, 200, 0, 0]
     ])
     ])
 
-wall += -110
 
 for j in range (0, 2):
     boulder = turtle.Turtle(visible=False)  # drawing the walls with an invisible turtle
@@ -435,11 +409,11 @@ for j in range (0, 2):
         boulder.goto(wall[j, 0, i], wall[j, 1, i])
     # boulder.end_fill()
 
-robot = Robot(0, 0, 0, "green")  # creates 1 robot position [x, y, teta (angle), color)
+robot = Robot(150, 150, 0, "green")  # creates 1 robot position [x, y, teta (angle), color)
 
 # movement of the robot
 
-for mov in range(0, 10):
+for mov in range(0, 500):
     robot.move(robot.sensors(wall))  # move(function) according to the sensors(function)
 
 turtle.done()
