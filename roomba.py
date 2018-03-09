@@ -9,11 +9,19 @@ numSensors = 12
 robotSize = 25
 tsize = 21  # turtle size
 linesize = 2
-turtleSpeed = 2
+turtleSpeed = 10
 autoHeading = False
 visualiseMode = True
 showDust = False
+numberofpopulation=10
 
+# I need to change those two parameter according to calculation
+numberofbumping=2
+newarea=5
+
+population= [[0 for x in range(numSensors)] for y in range(numberofpopulation)]
+reproduction=[[0 for x in range(numSensors)]for y in range(numberofpopulation)]
+index=[0 for x in range(3)]
 # xMax = (screenSize[0] - robotSize)
 # xMin = -(screenSize[0] + robotSize)
 # yMax = (screenSize[1] - robotSize)
@@ -148,9 +156,17 @@ class Robot(turtle.Turtle):
         self.setheading(target[2])
 
     def move(self, inputs):  # NN (inputs are sensors, outputs are the engines)
+
+        genetic_algorithm()
+        w1=random.randint(0, 9)
+        w2= random.randint(0, 9)
+        for i in range(0,numSensors):
+            self.weights1[i]=population[w1][i]
+            self.weights2[i]=population[w2][i]
+
         for i in range(len(inputs)):  # calculate the output based on inputs and weights of the individual
-            self.output1 += inputs[i] * self.weights1[i]  # [0] till [11]
-            self.output2 += inputs[i] * self.weights2[i]
+             self.output1 += inputs[i] * self.weights1[i]  # [0] till [11]
+             self.output2 += inputs[i] * self.weights2[i]
 
         self.output1 *= self.weights1[12]  # [12] repulsiveness
         self.output2 *= self.weights2[12]
@@ -200,33 +216,34 @@ class Robot(turtle.Turtle):
         sensor = np.ones(12) * sl  # sets the length and the position of the sensors
 
         for x in range(0, numSensors):  # for each sensor
-            for i in range(0, wall.shape[1] - 1):  # for each wall
-                a1 = np.array([pi[0], pi[1]])  # look for intersection, check the intersection is in the lines
-                a2 = np.array([sensx[x], sensy[x]]) * sl + pi[:2]
+            for j in range(0, 2):       # 2 walls
+                for i in range(0, 4):  # for each wall
+                    a1 = np.array([pi[0], pi[1]])  # look for intersection, check the intersection is in the lines
+                    a2 = np.array([sensx[x], sensy[x]]) * sl + pi[:2]
 
-                b1 = np.array([wall[0, i], wall[1, i]])
-                b2 = np.array([wall[0, i + 1], wall[1, i + 1]])
+                    b1 = np.array([wall[j, 0, i], wall[j, 1, i]])
+                    b2 = np.array([wall[j, 0, i + 1], wall[j, 1, i + 1]])
 
-                da = a2 - a1
-                db = b2 - b1
-                dp = a1 - b1
+                    da = a2 - a1
+                    db = b2 - b1
+                    dp = a1 - b1
 
-                dap = np.array([-da[1], da[0]])
-                denom = np.dot(dap, db)
-                num = np.dot(dap, dp)
+                    dap = np.array([-da[1], da[0]])
+                    denom = np.dot(dap, db)
+                    num = np.dot(dap, dp)
 
-                if ((abs(db[0]) == abs(da[0])) and (abs(da[1]) == abs(db[1]))) == 0:  # not parallels
-                    x3 = ((num / denom.astype(float)) * db + b1)[0]
-                    y3 = ((num / denom.astype(float)) * db + b1)[1]  # x3, y3 :intersection of the lines
+                    if ((abs(db[0]) == abs(da[0])) and (abs(da[1]) == abs(db[1]))) == 0:  # not parallels
+                        x3 = ((num / denom.astype(float)) * db + b1)[0]
+                        y3 = ((num / denom.astype(float)) * db + b1)[1]  # x3, y3 :intersection of the lines
 
-                    if ((a1[0] >= x3 >= a2[0]) | (a2[0] >= x3 >= a1[0])) and \
-                            ((a1[1] >= y3 >= a2[1]) | (a2[1] >= y3 >= a1[1])) and \
-                            ((b1[0] >= x3 >= b2[0]) | (b2[0] >= x3 >= b1[0])) and \
-                            ((b1[1] >= y3 >= b2[1]) | (b2[1] >= y3 >= b1[1])):  # they are in the lines
-                        inter = np.array([x3, y3])
-                        distance = np.sqrt((inter[0] - pi[0]) ** 2 + (inter[1] - pi[1]) ** 2)
-                        if distance < sensor[x]:
-                            sensor[x] = distance  # update if the current value is the smaller
+                        if ((a1[0] >= x3 >= a2[0]) | (a2[0] >= x3 >= a1[0])) and \
+                                ((a1[1] >= y3 >= a2[1]) | (a2[1] >= y3 >= a1[1])) and \
+                                ((b1[0] >= x3 >= b2[0]) | (b2[0] >= x3 >= b1[0])) and \
+                                ((b1[1] >= y3 >= b2[1]) | (b2[1] >= y3 >= b1[1])):  # they are in the lines
+                            inter = np.array([x3, y3])
+                            distance = np.sqrt((inter[0] - pi[0]) ** 2 + (inter[1] - pi[1]) ** 2)
+                            if distance < sensor[x]:
+                                sensor[x] = distance  # update if the current value is the smaller
 
         return (sensor)  # return array of 12 numbers (the output of each sensor)
 
@@ -243,14 +260,15 @@ class Robot(turtle.Turtle):
             po = pi + np.array([vc * d, vc * d, 0])
 
         else:  # rotation equations
+            delta = 10
             r = 0.5 * (ml + mr) / (mr - ml)  # radius of rotation
             w = (mr - ml) / robotSize  # angular velocity
 
             icc = np.array([pi[0] - r * np.sin(pi[2]), pi[1] + r * np.cos(pi[2])])  # instantaneous center of curvature
 
             rotmax = np.array([  # rotation matrix
-                [np.cos(w * d), -np.sin(w * d), 0],
-                [np.sin(w * d), np.cos(w * d), 0],
+                [np.cos(w * delta), -np.sin(w * delta), 0],
+                [np.sin(w * delta), np.cos(w * delta), 0],
                 [0, 0, 1]
             ])
 
@@ -263,44 +281,159 @@ class Robot(turtle.Turtle):
             po = np.dot(rotmax, secmax) + np.array([  # output position [x, y, teta]
                 [icc[0]],
                 [icc[1]],
-                [w * d]
+                [w * delta]
             ])
-
-        po[2] = po[2] / (2 * np.pi) * 360  # to change from radians to degrees
 
         return po
 
 
-def reproduceAndOverwrite(parent1, parent2, child):
-    global colors
-    if random.randint(0, 1) == 0:
-        childW1 = parent1.weights1
-        childW2 = parent2.weights2
+def genetic_algorithm():
+
+    initial_population()
+
+    for generation in range(0,2):
+        rank_population=[[0 for x in range(numSensors)] for y in range(numberofpopulation)]
+        rank_population_fit=[0 for x in range(numberofpopulation)]
+        for one in range(0,numberofpopulation):
+            fit=fitness(population[one])
+            #rank_population_fit contains the fitness and rank_population have same data
+            rank_population_fit[one]=fit
+            for j in range(numSensors):
+                rank_population[one][j]=population[one][j]
+        for i in range(10):
+            selection(rank_population_fit,rank_population)
+            parents1 = random.randint(0, 9)
+            parents2 = random.randint(0, 9)
+            reproduction[parents1]=mutation(reproduction[parents1])
+            reproduction[parents2]=mutation(reproduction[parents2])
+
+        for i in range(numberofpopulation):
+            for j in range(numSensors):
+                population[i][j] = reproduction[i][j]
+
+    #here i need to upload my population table data to NN
+    #i can choose or random select
+
+
+def initial_population():
+    for i in range(numberofpopulation):
+        for j in range(numSensors):
+            population[i][j] =random.uniform(weightMin, weightMax)
+
+
+def my_max(array):
+    a=max(array)
+    for i in range(0,len(array)):
+        if(a==array[i]):
+            a1=i
+            break
+    b=max(array)
+    for i in range(0,len(array)):
+        if(b==array[i]):
+            b1=i
+            break
+    c=max(array)
+    for i in range(0,len(array)):
+        if(c==array[i]):
+            c1=i
+            break
+
+    return a1,b1,c1
+
+
+# function for selection and reprodution
+
+def selection(rank,rank_population):
+
+    index[0],index[1],index[2]=my_max(rank)
+
+    index[0], index[1], index[2] = my_max(rank)
+
+    for j in range(0, numberofpopulation):
+        if (j < 4):
+            for i in range(0, numSensors):
+                max1 = index[0]
+                reproduction[j][i] = rank_population[max1][i]
+        elif (j > 3 & j < 7):
+            for i in range(0, numSensors):
+                reproduction[j][i] = rank_population[index[1]][i]
+        elif (j > 6):
+            for i in range(0, numSensors):
+                reproduction[j][i] = rank_population[index[2]][i]
+
+
+    print('Before crossover Reproduction:')
+    for i in range(10):
+        for j in range(12):
+            print(reproduction[i][j], end='     ')
+        print()
+
+    parents1=random.randint(0,9)
+    parents2=random.randint(0,9)
+    reproduction[parents1]=crossover(reproduction[parents1],reproduction[parents2])
+
+    print('After crossover Reproduction:')
+    for i in range(10):
+        for j in range(12):
+            print(reproduction[i][j], end='     ')
+        print()
+
+
+def crossover(array1,array2):
+    if(random.randint(0,1)==0):
+        choromosome1=array1[:6]
+        choromosome2=array2[6:]
+        totalchoromosome=choromosome1+choromosome2
     else:
-        childW1 = parent1.weights2
-        childW2 = parent2.weights1
-    child.overwriteRobot(random.randint(xMin, xMax), random.randint(yMin, yMax), random.choice(colors), childW1,
-                         childW2)
-    return child
+        choromosome2 = array1[:6]
+        choromosome1 = array2[6:]
+        totalchoromosome = choromosome1 + choromosome2
+    return totalchoromosome
+
+
+def mutation(array):
+    array_out=[0 for x in range(numSensors)]
+    for i in range(0,numSensors):
+        if random.randint(0,20)==1:
+            array_out[i] = array_out[i]+random.randint(0,20)
+        else:
+            array_out[i] =array[i]
+    return array_out
+
+
+def fitness(array):
+    fit=1
+    fit=1+newarea*10-numberofbumping
+    if fit<0: fit=1
+    return fit
 
 
 # initialisation
 
-wall = np.array([  # nodes of the wall
-    [120, 120, 20, 20, 120],
-    [20, 120, 120, 20, 20]
-])
+wall = np.array([
+    np.array([  # nodes of the wall
+        [220, 220, 120, 120, 220],
+        [120, 220, 220, 120, 120]
+    ]),
+    np.array([  # nodes of the wall
+        [0, 0, 300, 300, 0],
+        [0, 300, 300, 0, 0]
+    ])
+    ])
 
-boulder = turtle.Turtle(visible=False)  # drawing the walls with an invisible turtle
-boulder.color("black", "red")
-boulder.penup()
-boulder.speed(0)
-boulder.goto(wall[0, 0], wall[1, 0])
-boulder.pendown()
-boulder.begin_fill()
-for i in range(1, wall.shape[1] - 1):
-    boulder.goto(wall[0, i], wall[1, i])
-boulder.end_fill()
+wall += -110
+
+for j in range (0, 2):
+    boulder = turtle.Turtle(visible=False)  # drawing the walls with an invisible turtle
+    boulder.color("black", "red")
+    boulder.penup()
+    boulder.speed(0)
+    boulder.goto(wall[j, 0, 0], wall[j, 1, 0])
+    boulder.pendown()
+    # boulder.begin_fill()
+    for i in range(1, 5):
+        boulder.goto(wall[j, 0, i], wall[j, 1, i])
+    # boulder.end_fill()
 
 robot = Robot(0, 0, 0, "green")  # creates 1 robot position [x, y, teta (angle), color)
 
@@ -310,3 +443,4 @@ for mov in range(0, 10):
     robot.move(robot.sensors(wall))  # move(function) according to the sensors(function)
 
 turtle.done()
+
