@@ -1,3 +1,30 @@
+import turtle, random
+import numpy as np
+from numpy.linalg import norm
+
+
+colors = ["red", "green", "blue", "orange", "purple", "pink", "yellow"]
+screenSize = turtle.screensize()
+screen = turtle.Screen()
+
+numSensors = 12
+robotSize = 25
+tsize = 21  # turtle size
+linesize = 2
+turtleSpeed = 0
+autoHeading = False
+visualiseMode = True
+showDust = False
+numberofpopulation=10
+
+# I need to change those two parameter according to calculation
+numberofbumping=2
+newarea=5
+
+population= [[0 for x in range(numSensors)] for y in range(numberofpopulation)]
+reproduction=[[0 for x in range(numSensors)]for y in range(numberofpopulation)]
+index=[0 for x in range(3)]
+# xMax = (screenSize[0] - robotSize)
 # xMin = -(screenSize[0] + robotSize)
 # yMax = (screenSize[1] - robotSize)
 # yMin = -(screenSize[1] + robotSize)
@@ -52,6 +79,7 @@ class Robot(turtle.Turtle):
     dust = 0
     xy = {}
     xyi = 0
+    collision = 0
 
     def __repr__(self):
         return '{}: {}'.format(self.__class__.__name__,
@@ -165,10 +193,12 @@ class Robot(turtle.Turtle):
                                 self.xy[self.xyi - j][1][0] * self.weights1[len(inputs) + 4 + j * 2]
 
         self.xy[self.xyi + 1] = self.kinematics()  # calculates new point (kinematics), adds to positions
+
         self.xyi += 1
         xytry = (self.xy[self.xyi][0][0], self.xy[self.xyi][1][0], self.xy[self.xyi][2][0])
         self.moveToTarget(xytry)  # visualisation
         # move based on output 1 and 2
+
 
     def evaluate(self):
         # add fitness function
@@ -223,13 +253,15 @@ class Robot(turtle.Turtle):
         return (sensor)  # return array of 12 numbers (the output of each sensor)
 
     def kinematics(self):
-        delta = 1000000
+        delta = 10000000
         ml = self.output1
         mr = self.output2
         if self.xyi == 0:  # sets the initial position
             pi = self.xy[self.xyi]
         else:
             pi = np.array([self.xy[self.xyi][0][0], self.xy[self.xyi][1][0], self.xy[self.xyi][2][0]])
+
+        pi[2] = pi[2] / 360 * 2 * np.pi
 
         if mr == ml:  # no rotation equations
             vc = (mr + ml) / 2
@@ -258,7 +290,41 @@ class Robot(turtle.Turtle):
                 [icc[1]],
                 [w * delta]
             ])
-        print(po)
+        po[2] = po[2] * 360 / 2 / np.pi
+
+        # check if point is ok:     # COLLISION#############################
+
+        # po = np.array([[75], [105], [-90]])       #to test the colision
+        d_min = 1000000
+        for j in range(0, 2):  # 2 walls
+            for i in range(0, 4):  # for each wall
+                p1 = np.array([wall[j, 0, i], wall[j, 1, i]])
+                p2 = np.array([wall[j, 0, i + 1], wall[j, 1, i + 1]])
+                p3 = np.array([po[0][0], po[1][0]])
+                dist = np.abs(np.cross(p2 - p1, p3 - p1) / norm(p2 - p1))     # distance to walls
+
+                k = ((p2[1] - p1[1]) * (p3[0] - p1[0]) - (p2[0] - p1[0]) * (p3[1] - p1[1])) / \
+                    ((p2[1] - p1[1]) ** 2 + (p2[0] - p1[0]) ** 2)
+                pcol = np.array([  # point of collision
+                    p3[0] - k * (p2[1] - p1[1]),
+                    p3[1] + k * (p2[0] - p1[0])
+                ])
+                if (p1[0] <= pcol[0] <= p2[0] or p2[0] <= pcol[0] <= p1[0]) and \
+                        (p1[1] <= pcol[1] <= p2[1] or p2[1] <= pcol[1] <= p1[1]) and \
+                        (dist < d_min): # collision in wall
+                    d_min = dist  # distance from the position to the walls
+                    col = pcol    # collision point
+
+        if d_min < robotSize/2:  # if collision
+            self.collision += 1
+
+            pcol = col - p3
+            pcol = pcol / np.sqrt((col[0] - po[0]) ** 2 + (col[1] - po[1]) ** 2)
+            print("collision")
+
+            po[0] = (col - robotSize/2 * pcol)[0]
+            po[1] = (col - robotSize/2 * pcol)[1]
+
         return po
 
 
@@ -397,7 +463,7 @@ wall = np.array([
     ])
 
 
-for j in range (0, 2):
+for j in range(0, 2):
     boulder = turtle.Turtle(visible=False)  # drawing the walls with an invisible turtle
     boulder.color("black", "red")
     boulder.penup()
@@ -409,12 +475,11 @@ for j in range (0, 2):
         boulder.goto(wall[j, 0, i], wall[j, 1, i])
     # boulder.end_fill()
 
-robot = Robot(150, 150, 0, "green")  # creates 1 robot position [x, y, teta (angle), color)
+robot = Robot(75, 115, -90, "green")  # creates 1 robot position [x, y, teta (angle), color)
 
 # movement of the robot
 
-for mov in range(0, 500):
+for mov in range(0, 100):
     robot.move(robot.sensors(wall))  # move(function) according to the sensors(function)
 
 turtle.done()
-
