@@ -1,23 +1,4 @@
-import turtle, random
-import numpy as np
-from numpy.linalg import norm
-
-
-colors = ["red", "green", "blue", "orange", "purple", "pink", "yellow"]
-screenSize = turtle.screensize()
-screen = turtle.Screen()
-
-numSensors = 12
-robotSize = 25
-tsize = 21  # turtle size
-linesize = 2
-turtleSpeed = 0
-autoHeading = False
-visualiseMode = True
-showDust = False
-numberofpopulation=10
-
-# I need to change those two parameter according to calculation
+ to change those two parameter according to calculation
 numberofbumping=2
 newarea=5
 
@@ -192,13 +173,12 @@ class Robot(turtle.Turtle):
                 self.output2 += self.xy[self.xyi - j][0][0] * self.weights1[len(inputs) + 3 + j * 2] + \
                                 self.xy[self.xyi - j][1][0] * self.weights1[len(inputs) + 4 + j * 2]
 
-        self.xy[self.xyi + 1] = self.kinematics()  # calculates new point (kinematics), adds to positions
+        self.xy[self.xyi + 1] = self.kinematics  # calculates new point (kinematics), adds to positions
 
         self.xyi += 1
         xytry = (self.xy[self.xyi][0][0], self.xy[self.xyi][1][0], self.xy[self.xyi][2][0])
         self.moveToTarget(xytry)  # visualisation
         # move based on output 1 and 2
-
 
     def evaluate(self):
         # add fitness function
@@ -252,6 +232,7 @@ class Robot(turtle.Turtle):
 
         return (sensor)  # return array of 12 numbers (the output of each sensor)
 
+    @property
     def kinematics(self):
         delta = 10000000
         ml = self.output1
@@ -294,36 +275,76 @@ class Robot(turtle.Turtle):
 
         # check if point is ok:     # COLLISION#############################
 
-        # po = np.array([[75], [105], [-90]])       #to test the colision
-        d_min = 1000000
-        for j in range(0, 2):  # 2 walls
-            for i in range(0, 4):  # for each wall
-                p1 = np.array([wall[j, 0, i], wall[j, 1, i]])
-                p2 = np.array([wall[j, 0, i + 1], wall[j, 1, i + 1]])
-                p3 = np.array([po[0][0], po[1][0]])
-                dist = np.abs(np.cross(p2 - p1, p3 - p1) / norm(p2 - p1))     # distance to walls
+        # po = np.array([[175], [175], [-90]])       #to test the collision
+        for x in range(0, 3):
+            d_min = 1000000
+            inter = False
+            for j in range(0, 2):  # 2 walls
+                for i in range(0, 4):  # for each wall
+                    if not inter:
+                        p1 = np.array([wall[j, 0, i], wall[j, 1, i]])           #too close
+                        p2 = np.array([wall[j, 0, i + 1], wall[j, 1, i + 1]])
+                        p3 = np.array([po[0][0], po[1][0]])
+                        dist = np.abs(np.cross(p2 - p1, p3 - p1) / norm(p2 - p1))     # distance to walls
 
-                k = ((p2[1] - p1[1]) * (p3[0] - p1[0]) - (p2[0] - p1[0]) * (p3[1] - p1[1])) / \
-                    ((p2[1] - p1[1]) ** 2 + (p2[0] - p1[0]) ** 2)
-                pcol = np.array([  # point of collision
-                    p3[0] - k * (p2[1] - p1[1]),
-                    p3[1] + k * (p2[0] - p1[0])
-                ])
-                if (p1[0] <= pcol[0] <= p2[0] or p2[0] <= pcol[0] <= p1[0]) and \
-                        (p1[1] <= pcol[1] <= p2[1] or p2[1] <= pcol[1] <= p1[1]) and \
-                        (dist < d_min): # collision in wall
-                    d_min = dist  # distance from the position to the walls
-                    col = pcol    # collision point
+                        k = ((p2[1] - p1[1]) * (p3[0] - p1[0]) - (p2[0] - p1[0]) * (p3[1] - p1[1])) / \
+                            ((p2[1] - p1[1]) ** 2 + (p2[0] - p1[0]) ** 2)
+                        pcol = np.array([  # point of collision
+                            p3[0] - k * (p2[1] - p1[1]),
+                            p3[1] + k * (p2[0] - p1[0])
+                        ])
+                        if (p1[0] <= pcol[0] <= p2[0] or p2[0] <= pcol[0] <= p1[0]) and \
+                                (p1[1] <= pcol[1] <= p2[1] or p2[1] <= pcol[1] <= p1[1]) and \
+                                (dist < d_min): # collision in wall
+                            d_min = dist  # distance from the position to the walls
+                            col = pcol    # collision point
 
-        if d_min < robotSize/2:  # if collision
-            self.collision += 1
+                    # too far
+                    da = p2 - p1
+                    db = p3 - np.array([pi[0], pi[1]])
+                    dp = p1 - np.array([pi[0], pi[1]])
 
-            pcol = col - p3
-            pcol = pcol / np.sqrt((col[0] - po[0]) ** 2 + (col[1] - po[1]) ** 2)
-            print("collision")
+                    dap = np.array([-da[1], da[0]])
+                    denom = np.dot(dap, db)
+                    num = np.dot(dap, dp)
 
-            po[0] = (col - robotSize/2 * pcol)[0]
-            po[1] = (col - robotSize/2 * pcol)[1]
+                    if ((abs(db[0]) == abs(da[0])) and (abs(da[1]) == abs(db[1]))) == 0 and (denom != 0):  # not parallels
+                        x3 = ((num / denom.astype(float)) * db + np.array([pi[0], pi[1]]))[0]
+                        y3 = ((num / denom.astype(float)) * db + np.array([pi[0], pi[1]]))[1]  # x3, y3 :intersection of the lines
+
+                        if ((p1[0] >= x3 >= p2[0]) | (p2[0] >= x3 >= p1[0])) and \
+                                ((p1[1] >= y3 >= p2[1]) | (p2[1] >= y3 >= p1[1])) and \
+                                ((np.array([pi[0], pi[1]])[0] >= x3 >= p3[0]) |
+                                 (p3[0] >= x3 >= np.array([pi[0], pi[1]])[0])) and \
+                                ((np.array([pi[0], pi[1]])[1] >= y3 >= p3[1]) |
+                                 (p3[1] >= y3 >= np.array([pi[0], pi[1]])[1])):  # they are in the lines
+                            col = np.array([x3, y3])
+                            dist = np.abs(np.sqrt((col[0] - pi[0]) ** 2 + (col[1] - pi[1]) ** 2))
+                            inter = True
+                            if dist < d_min:
+                                d_min = dist
+
+                # print("in", col, d_min)
+
+            if d_min < robotSize / 1.8:  # if collision
+                self.collision += 1
+                pcol = col - p3
+                pcol = pcol / np.abs(np.sqrt((col[0] - p3[0]) ** 2 + (col[1] - p3[1]) ** 2))
+                print("collision near")
+                po[0] = (col - robotSize/1.8 * pcol)[0]
+                po[1] = (col - robotSize/1.8 * pcol)[1]
+
+            if inter:
+                self.collision += 1
+                print("collision far", col)
+                # pcol = col - p3
+                # pcol = pcol / np.abs(np.sqrt((col[0] - p3[0]) ** 2 + (col[1] - p3[1]) ** 2))
+                # po[0] = (col+pcol*robotSize/2)[0]
+                # po[1] = (col+pcol*robotSize/2)[1]
+                po[0] = pi[0]
+                po[1] = pi[1]
+                print (po)
+
 
         return po
 
@@ -384,7 +405,7 @@ def my_max(array):
 
 # function for selection and reprodution
 
-def selection(rank,rank_population):
+def selection(rank, rank_population):
 
     index[0],index[1],index[2]=my_max(rank)
 
@@ -420,7 +441,7 @@ def selection(rank,rank_population):
         # print()
 
 
-def crossover(array1,array2):
+def crossover(array1, array2):
     if(random.randint(0,1)==0):
         choromosome1=array1[:6]
         choromosome2=array2[6:]
@@ -457,8 +478,8 @@ wall = np.array([
         [50, 50, 100, 100, 50]
     ]),
     np.array([  # nodes of the wall
-        [0, 0, 200, 200, 0],
-        [0, 200, 200, 0, 0]
+        [0, 0, 150, 150, 0],
+        [0, 150, 150, 0, 0]
     ])
     ])
 
@@ -475,7 +496,7 @@ for j in range(0, 2):
         boulder.goto(wall[j, 0, i], wall[j, 1, i])
     # boulder.end_fill()
 
-robot = Robot(75, 115, -90, "green")  # creates 1 robot position [x, y, teta (angle), color)
+robot = Robot(75, 120, -90, "green")  # creates 1 robot position [x, y, teta (angle), color)
 
 # movement of the robot
 
@@ -483,3 +504,4 @@ for mov in range(0, 100):
     robot.move(robot.sensors(wall))  # move(function) according to the sensors(function)
 
 turtle.done()
+
