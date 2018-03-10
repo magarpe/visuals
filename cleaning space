@@ -1,0 +1,31 @@
+def newlocation(myxy):
+#     find the percentage of cleaning area
+# i need one array myxy in 2d with every location x y
+    
+    
+    for i in range(10):
+        for k in range(2):
+            if ((i == 0) & (k == 0)):
+                xclean1 = 0
+                yclean1 = 0
+            else:
+                xclean2 = int((myxy[i][0] + 150) / 10)
+                yclean2 = int((myxy[i][1] + 150) / 10)
+                arr = xclean2 + (yclean2 * 15)
+                clean.insert(arr, 1)
+                xdist = abs(xclean1 - xclean2)
+                ydist = abs(yclean1 - yclean2)
+                for i in range(xdist):
+                    for j in range(ydist):
+                        arr = (xclean2 + i) + ((yclean2 + j) * 15)
+                        clean.insert(arr, 1)
+
+                xclean1 = xclean2
+                yclean1 = yclean2
+                
+    for i in range(225):
+        if (clean[i] != 0):
+            sum += 1  #
+    per = (sum * 100) / 255
+    # print('the cleaning area is :=', per,'\n','percent and the sum=',sum)
+    return per
