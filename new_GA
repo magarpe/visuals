@@ -1,0 +1,148 @@
+import turtle, random, math,copy
+
+
+numRobots=4
+lengthofdna=24
+numberofpopulation=10
+numberofreproductdna=4
+numberofbumping=random.randrange(0,4)
+newarea=random.randrange(3,10)
+totaliteration=4
+
+population= [[0 for x in range(lengthofdna)] for y in range(numRobots)]
+reproduction=[[0 for x in range(lengthofdna)]for y in range(numberofreproductdna)]
+child=[[0 for x in range(lengthofdna)] for y in range(numRobots)]
+index=[0 for x in range(3)]
+
+weightMin = 0
+weightMax = 1
+
+def initial_population():
+    for i in range(0,numRobots):
+        for j in range(0,lengthofdna):
+            population[i][j] =random.uniform(weightMin, weightMax)
+
+def genetic_algorithm():
+
+    initial_population()
+    #the rank_population table contains total length dna and last bit is the corresponding fitness value
+
+    rank_population = [[0 for x in range(lengthofdna+1)] for y in range(numRobots)]
+    for iteration in range(0,totaliteration):
+
+        for onerobot in range(0,numRobots):
+            fit1=fitness(population[onerobot])
+
+            for j in range(lengthofdna):
+                rank_population[onerobot][j]=population[onerobot][j]
+            rank_population[onerobot][lengthofdna]=fit1
+
+    #my evalution finish
+    #start Selection:
+    #select two maximum rank parents
+
+        max=0
+        for selectrobot in range(0,numRobots):
+            if(max<rank_population[selectrobot][lengthofdna]):
+                max=rank_population[selectrobot][lengthofdna]
+                index[0]=selectrobot
+        max = 0
+        for selectrobot in range(0, numRobots):
+            if(selectrobot!=index[0]):
+                if (max < rank_population[selectrobot][lengthofdna]):
+                    max = rank_population[selectrobot][lengthofdna]
+                    index[1] = selectrobot
+
+
+        #now rendomly selected one week parents
+        #parents = random.randint(0, numRobots-1)
+        while True:
+            parents = random.randint(0, numRobots-1)
+            if((parents!=index[0])&(parents!=index[1])):
+                break
+        index[2]=parents
+        
+
+        if (iteration > 0):
+            print(" In ", iteration-1, " iteration, best fitted one child is: ", )
+            print(index[0]," robot")
+            for i in range(0,numRobots):
+                if(index[0]==i):
+                    for k in range(lengthofdna):
+                        print(rank_population[i][k],"  ")
+               # print()
+
+
+
+        for i in range(numRobots):
+            if(index[0]==i):
+                for k in range(lengthofdna):
+                    reproduction[0][k]=rank_population[i][k]
+                    reproduction[1][k] = rank_population[i][k]
+
+            if (index[1] == i):
+                for k in range(lengthofdna):
+                    reproduction[2][k] = rank_population[i][k]
+
+            if (index[2] == i):
+                for k in range(lengthofdna):
+                    reproduction[3][k] = rank_population[i][k]
+
+        for i in range(0,numRobots):
+            parent1=random.randint(0,numRobots-1)
+            while True:
+                parent2 = random.randint(0, numRobots-1)
+                if(parent1!=parent2):
+                    break
+            child[i]=crossover(reproduction[parent1],reproduction[parent2])
+
+        parent1 = random.randint(0, numRobots - 1)
+        parent2 = random.randint(0, numRobots - 1)
+        child[parent1]=mutation(child[parent1])
+        child[parent2]=mutation(child[parent2])
+
+        for i in range(0, numRobots):
+            for j in range(0, lengthofdna):
+                population[i][j] = child[i][j]
+
+    # print('CrossOver + mutation:')
+    # for i in range(4):
+    #     for j in range(24):
+    #         print(child[i][j], end='     ')
+    #     print()
+
+
+def crossover(array1,array2):
+    if(random.randint(0,1)==0):
+        choromosome1=array1[:12]
+        choromosome2=array2[12:]
+        totalchoromosome=choromosome1+choromosome2
+    else:
+        choromosome2 = array1[:12]
+        choromosome1 = array2[12:]
+        totalchoromosome = choromosome1 + choromosome2
+    return totalchoromosome
+
+def mutation(array):
+    array_out=[0 for x in range(lengthofdna)]
+    for i in range(0,lengthofdna):
+        if random.randint(0,20)==1:
+            array_out[i] = array_out[i]+random.randint(0,1)
+        else:
+            array_out[i] =array[i]
+    return array_out
+
+
+
+def fitness(array):
+    numberofbumping = random.randrange(0, 4)
+    newarea = random.randrange(3, 10)
+    fit=1+newarea*10-numberofbumping
+    if fit<0: fit=1
+    return fit
+
+
+def main():
+    genetic_algorithm()
+
+main()
