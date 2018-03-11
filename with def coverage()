@@ -304,9 +304,9 @@ def selection(bots):
                 if bots[nbots].fitness() > bestsofar:
                     bestsofar = bots[nbots].fitness()
                     bestbot = nbots
-        if range == 0:
-            bestFitness[bots[bestbot].generation()] = bestsofar         # stores the best fitness of each iteration
-            print("\nBest fitness of this generation stored\n")
+        if rank == 0:
+            bestFitness[bots[bestbot].generation] = bestsofar         # stores the best fitness of each iteration
+            print("\nBest fitness of this generation stored:",bestsofar,"\n")
         bots[bestbot].setrank(rank+1)
         first = True
         ordered[rank] = bots[bestbot]
@@ -325,7 +325,7 @@ def selection(bots):
     # selected = np.zeros(20)
 
     selected = np.random.choice(ordered, 20, selprob)
-    print("\nparents chosen based on their rank\n")
+    print("\nParents chosen based on their rank\n")
     return selected
 
 
@@ -506,19 +506,19 @@ robots = [Robot(25, 25, 0)
     for r in range(numRobots)]
 
 print("\n-----------------------------------CLEANING ROBOT EVOLUTION------------------------------------\n",
-      numRobots, "robots initialized\n\n")
+      numRobots, "Robots initialized\n\n")
 
 for gen in range(0, niterations):
-    print("\n\nevaluating generation: ", gen, " of ", niterations, " ...")
+    print("\n\nEvaluating generation: ", gen, " of ", niterations, " ...")
     for s in range(0, numRobots):
-        print("\n moving robot: ", s, " of ", numRobots ," ...")
+        print("\nMoving robot: ", s, " of ", numRobots ," ...")
         for mov in range(0, step):
             robots[s].move(robots[s].sensors(wall))
 
         covered = coverage(robots[s].getxy(), wall)
         robots[s].givecoverage(covered)
 
-    print("evaluation complete.\n\n starting selection...")
+    print("Evaluation complete.\n\n Starting selection...")
     selec = selection(robots)
     print("Selection completed")
 
@@ -535,7 +535,7 @@ for gen in range(0, niterations):
 
         robots[rep].setweights(dna[0], gen)
         robots[rep+1].setweights(dna[1], gen)
-    print("\nreproduction complete.\nNew generation is ready\n\n")
+    print("\nReproduction complete.\nNew generation is ready\n\n")
 
 
 print("\n\n\n------------------------------FINISHED-------------------------------------------\n\n\n "
